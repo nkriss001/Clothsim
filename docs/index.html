@@ -25,17 +25,516 @@
 
 <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2018</h1>
 <h1 align="middle">Project 4: Cloth Simulator</h1>
-<h2 align="middle">YOUR NAME, CS184-???</h2>
+<h2 align="middle">Nicholas Kriss, CS184-aar</h2>
 
 <br><br>
 
 <div>
 
 <h2 align="middle">Overview</h2>
-<p>Give a high-level overview of what you implemented in this project. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the project.</p>
+<p>In this project, I simulated cloth motion using a system of springs and point masses. First, I implemented the structure of springs and masses for a motionless cloth. Second, I used Verlet integration to calculate the new position of each mass at each time step, using the force exerted on the mass by gravity and springs in the simulation. Third, I added collision tests and correction procedures to handle collisions with spheres and planes in the scene. Finally, I handled cases where the cloth collides with itself, so that the cloth does not clip through itself during motion. I thought this project was pretty easy, since it was mostly just coding the formulas given in the spec. The part that gave me the most difficulty was thinking about how spring forces act on the point masses, and making sure the directions of my forces were all correct. Also, thinking about how to find which point masses hashed to the same value for self collisions was a bit difficult, until I visualized the system of boxes that I could use to model the cloth, at which point the arithmetic becamse clear.</p>
 
 <h2 align="middle">Part I: Masses and springs</h2>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="pinned2all.png" align="middle" width="400px"/>
+        <figcaption align="middle">scene/pinned2.json with all constraints</figcaption>
+      </td>
+      <td>
+        <img src="pinned2all2.png" align="middle" width="400px"/>
+        <figcaption align="middle">scene/pinned2.json with all constraints</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2noshear.png" align="middle" width="400px"/>
+        <figcaption align="middle">scene/pinned2.json without shearing constraints</figcaption>
+      </td>
+      <td>
+        <img src="pinned2noshear2.png" align="middle" width="400px"/>
+        <figcaption align="middle">scene/pinned2.json without shearing constraints</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2shear.png" align="middle" width="400px"/>
+        <figcaption align="middle">scene/pinned2.json with only shearing constraints</figcaption>
+      </td>
+      <td>
+        <img src="pinned2shear2.png" align="middle" width="400px"/>
+        <figcaption align="middle">scene/pinned2.json with only shearing constraints</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
 
+<br>
 
+<h2 align="middle">Part II: Simulation via numerical integration</h2>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="pinned2ks50_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 50 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2ks5000_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2ks100000_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 100000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2ks50_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 50 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2ks5000_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2ks100000_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 100000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2ks50_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 50 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2ks5000_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2ks100000_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 100000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2ks50_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 50 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2ks5000_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2ks100000_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 100000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2ks50_5.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 50 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2ks5000_5.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2ks100000_5.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 100000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<p>Decreasing the spring constant ks causes the cloth to deform more. We can see wrinkles appear as soon as the cloth starts to fold, and many more folds appear as the simulation continues. There is also some folding perpendicular to the plane of the cloth, which we do not really see with higher spring constants. When the cloth comes to rest, we see it sags and has many shallow folds at the top. It also falls sags at the very bottom of the cloth. Increasing the spring constant causes the cloth to maintain more of its shape. We see hardly any wrinkles at any stage of the simulation, and the cloth only folds slightly near the bottom as it falls. At rest, the cloth is almost perfectly square except at the very top, where we see a single, fairly deep fold near the very top of the cloth. All of the folds are in the plane of the cloth, as opposed to the more varied folding when we decrease ks even to default parameters.</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="pinned2density0.5_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 0.5 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2density15_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2density1500_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 1500 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2density0.5_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 0.5 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2density15_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2density1500_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 1500 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2density0.5_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 0.5 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2density15_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2density1500_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 1500 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2density0.5_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 0.5 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2density15_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2density1500_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 1500 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2density0.5_5.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 0.5 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2density15_5.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2density1500_5.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 1500 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>Decreasing the density has exactly the same effect as increasing the spring constant: the cloth maintains more of its original square shape and has very few wrinkles at any stage of the simulation. Conversely, increasing the density creates more folds in the cloth and causes it to sag at the edges, much like decreasing the spring constant.</p>
+<br>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="pinned2damping.5_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.5%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2damping.5_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.5%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2damping.5_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">"front" of scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.5%</figcaption>
+      </td>
+      <td>
+        <img src="pinned2damping.5_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">"back" of scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.5%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="pinned2damping.08_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.08</figcaption>
+      </td>
+      <td>
+        <img src="pinned2damping.08_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.08%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+       <td>
+        <img src="pinned2damping.08_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.08</figcaption>
+      </td>
+      <td>
+        <img src="pinned2damping.08_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.08%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+       <td>
+        <img src="pinned2damping.08_5.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.08</figcaption>
+      </td>
+      <td>
+        <img src="pinned2damping.08_6.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.08%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+       <td>
+        <img src="pinned2damping.08_7.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">"front" or scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.08</figcaption>
+      </td>
+      <td>
+        <img src="pinned2damping.08_8.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">"back" of scene/pinned2.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.08%</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<p>We get very interesting results by varying the damping. Increasing the damping causes the cloth to have the same rest state, but it takes much longer to reach that state since the cloth falls so slowly. We also see less deformation of the cloth during its falling phase, and once it has fallen it actually reaches equilibirum fasterr, since it does no swing backwards. Decreasing the damping causes the cloth to fall quickly, deform heavily and be swung past the equilibrium position. We see many wrinkles, especially at the bottom of the cloth. The final position of the cloth looks very similar to the default parameters, but by decreasing the damping enough we can actually cause the topmost fold to flip sides. My last two images show the cloth at rest, with the first image representing the "front" of the cloth and the second the "back", even though they appear reveresed from the cloths with higher damping.</p>
+<br>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="pinned4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/pinned4.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<br>
+
+<h2 align="middle">Part III: Handling collisions with other objects</h2>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="sphere500above.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 500 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="sphere500below.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 500 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="sphere500left.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 500 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="sphere500right.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 500 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="sphere5000above.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="sphere5000below.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="sphere5000left.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="sphere5000right.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="sphere50000above.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 50000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="sphere50000below.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 50000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="sphere50000left.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 50000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="sphere50000right.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/sphere.json with ks = 50000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<p>As before, a lower spring constant causes the cloth to fold more, which is clearly visible from the underside of the sphere. We see 17 protruding folds when ks = 500, 12 when ks = 5000, and 8 when ks = 50000. Also, as we increase the spring constant, the cloth preferences one side of the sphere over the other, with the cloth being visibly lower at that position and thus higher at the opposite position. Also, as the number of folds decrease, the size of the folds and the amount of cloth used by each fold increases, so that folds remain evenly spaced and sized even as their number changes.  </p>
+<br>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="plane1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/plane.json in its final resting state</figcaption>
+      </td>
+      <td>
+        <img src="plane2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/plane.json in its final resting state</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<br>
+<h2 align="middle">Part IV: Handling self-collisions</h2>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="selfcollision1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="selfcollision2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="selfcollision3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="selfcollision4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="selfcollisiondensity.5_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 0.5 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="selfcollisiondensity1500_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 1500 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="selfcollisiondensity.5_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 0.5 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="selfcollisiondensity1500_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 1500 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="selfcollisiondensity.5_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 0.5 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="selfcollisiondensity1500_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 1500 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="selfcollisiondensity.5_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 0.5 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="selfcollisiondensity1500_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 5000 N/m, density = 1500 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<br>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="selfcollisionks50_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 50 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="selfcollisionks100000_1.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 100000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="selfcollisionks50_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 50 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="selfcollisionks100000_2.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 100000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="selfcollisionks50_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 50 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="selfcollisionks100000_3.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 100000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="selfcollisionks50_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 50 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="selfcollisionks100000_4.png" align="middle" width="400px" height="400px"/>
+        <figcaption align="middle">scene/selfCollision.json with ks = 100000 N/m, density = 15 g/cm^2, damping = 0.2%</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<p>As with the previous parts, increasing the density is roughly equivalent to decreasing the spring constant. As density increases or ks decreases, the cloth becomes less stable and we see many more folds as the cloth falls onto itself. The folds themselves are also more chaotic, having many ripples and being in constant motion. As a result, the cloth does not come to a satisfying rest state, with the final result continuing to look chaotic. By contrast, decreasing the density or increasing ks causes the cloth to become more stable. The cloth folds on itself very few times, though as we decrease density the folds become transferred through the entirety of the cloth. For high density or low ks, the part of the cloth that is not actively being folded on remains rigid, contrasting the full motion of low density or high ks. Also, decreasing the density or increasing ks causes the cloth to remain smooth and come to a very clean rest state, with the cloth folded over itself only once or twice.</p>
 </body>
 </html>
