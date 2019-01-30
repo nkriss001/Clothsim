@@ -191,7 +191,6 @@ float Cloth::hash_position(Vector3D pos) {
   double t = max(w, h);
   Vector3D box((pos.x - fmod(pos.x, w)) / w, (pos.y - fmod(pos.y, h)) / h, (pos.z - fmod(pos.z, t)) / t);
   return box.x + box.y * num_width_points + box.z * num_height_points * num_width_points;
-  return 0.f;
 }
 
 ///////////////////////////////////////////////////////
